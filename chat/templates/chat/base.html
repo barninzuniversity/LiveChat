@@ -1,0 +1,387 @@
+{% load static %}
+{% load chat_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Social Chat{% endblock %}</title>
+    <!-- Bootstrap 5 and Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Instagram font -->
+    <link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&display=swap" rel="stylesheet">
+    
+    <!-- Instagram Theme & Animation CSS -->
+    <link rel="stylesheet" href="{% static 'css/instagram-theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}">
+    
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .content {
+            flex: 1;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #4F46E5;
+        }
+        /* Modern Chat Styling */
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 75%;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            word-wrap: break-word;
+        }
+        .sent {
+            background-color: #0084ff;
+            color: white;
+            margin-left: auto;
+            margin-right: 10px;
+            border-bottom-right-radius: 5px;
+        }
+        .received {
+            background-color: #f0f2f5;
+            color: #050505;
+            margin-left: 10px;
+            border-bottom-left-radius: 5px;
+        }
+        .message-time {
+            font-size: 0.65rem;
+            opacity: 0.8;
+            margin-top: 4px;
+            display: inline-block;
+        }
+        .sent .message-time {
+            color: rgba(255,255,255,0.9);
+            text-align: right;
+            float: right;
+        }
+        .received .message-time {
+            color: #65676b;
+            text-align: left;
+            float: left;
+        }
+        .chat-container {
+            height: 70vh;
+            overflow-y: auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 0;
+        }
+        .chat-input {
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+            padding: 15px;
+            border-top: 1px solid #e4e6eb;
+        }
+        .chat-input .form-control {
+            border-radius: 20px;
+            padding: 10px 15px;
+            background-color: #f0f2f5;
+            border: none;
+        }
+        .chat-input .form-control:focus {
+            box-shadow: none;
+            background-color: #e4e6eb;
+        }
+        .chat-input .btn-primary {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0084ff;
+            border: none;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #e4e6eb;
+            padding: 15px;
+        }
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .profile-avatar-sm {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .friend-request {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        /* File Upload Styling */
+        .upload-drop-zone {
+            border: 2px dashed #4F46E5;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            background-color: #F0F1FF;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-drop-zone:hover, .upload-drop-zone.dragover {
+            background-color: #E6E8FF;
+            border-color: #3730A3;
+        }
+        
+        /* Post actions and reactions */
+        .post-actions {
+            color: #65676b;
+        }
+        
+        .reactions-badge {
+            background-color: #f0f2f5;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .reactions-dropdown {
+            min-width: 300px;
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn-reaction {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 10px;
+            background: none;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .btn-reaction:hover {
+            background-color: #f0f2f5;
+            transform: scale(1.1);
+        }
+        
+        .reaction-emoji {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+        }
+        
+        .reaction-text {
+            font-size: 0.7rem;
+        }
+        
+        .comment-content {
+            border-radius: 18px !important;
+            background-color: #f0f2f5;
+        }
+        
+        .btn-link {
+            color: #65676b;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        
+        .btn-link:hover {
+            color: #1877f2;
+            text-decoration: underline;
+        }
+        
+        #file-preview img {
+            max-height: 100px;
+            border-radius: 5px;
+        }
+        
+        #file-preview video {
+            max-height: 100px;
+            max-width: 200px;
+            border-radius: 5px;
+        }
+        
+        .file-name {
+            font-size: 0.85rem;
+            color: #666;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if request.session.dark_mode %}dark{% endif %}">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-white sticky-top mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                SocialChat
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="fas fa-home"></i>
+                            <span class="d-lg-none ms-2">Home</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'chat_list' %}">
+                            <i class="fas fa-comment"></i>
+                            <span class="d-lg-none ms-2">Messages</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'friends_list' %}">
+                            <i class="fas fa-user-friends"></i>
+                            <span class="d-lg-none ms-2">Friends</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center">
+                    <!-- User profile dropdown -->
+                    {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="profile-avatar-sm me-2">
+                            {% else %}
+                            <div class="profile-avatar-sm me-2 d-flex align-items-center justify-content-center bg-primary text-white">
+                                {{ user.username.0|upper }}
+                            </div>
+                            {% endif %}
+                            <span class="d-none d-md-inline">{{ user.username }}</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="{% url 'profile_detail' username=user.username %}">
+                                <i class="fas fa-user me-2"></i> Profile
+                            </a>
+                            <a class="dropdown-item" href="{% url 'edit_profile' %}">
+                                <i class="fas fa-cog me-2"></i> Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary me-2">Log In</a>
+                    <a href="{% url 'signup' %}" class="btn btn-outline-primary">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="container {% block container_class %}{% endblock %}">
+        {% if messages %}
+        <div class="row">
+            <div class="col-md-12">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    
+    <!-- Instagram theme JS -->
+    <script src="{% static 'js/components/animations.js' %}"></script>
+    <script src="{% static 'js/components/dark-mode.js' %}"></script>
+    <script src="{% static 'js/components/signup.js' %}"></script>
+    
+    <!-- Page specific animations -->
+    {% if request.resolver_match.url_name == 'chat_room' %}
+    <script src="{% static 'js/components/chat-room.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'home' %}
+    <script src="{% static 'js/components/home.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'profile_detail' or request.resolver_match.url_name == 'edit_profile' %}
+    <script src="{% static 'js/components/profile.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'friends_list' or request.resolver_match.url_name == 'blocked_users' %}
+    <script src="{% static 'js/components/friends-list.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'chat_list' %}
+    <script src="{% static 'js/components/chat-list.js' %}"></script>
+    {% endif %}
+    
+    {% if "comment" in request.path %}
+    <script src="{% static 'js/components/comment.js' %}"></script>
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
+    <script src="{% static 'js/components/post-reactions.js' %}"></script>
+    <!-- Add CSRF token meta tag -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- HTMX -->
+    <script>
+      // Initialize HTMX with preserve enabled
+      document.addEventListener('DOMContentLoaded', function() {
+        htmx.config.useTemplateFragments = true;
+        htmx.config.defaultSwapStyle = 'innerHTML';
+        htmx.config.refreshOnHistoryMiss = false;
+        
+        // Set up HTMX preserve feature
+        htmx.defineExtension('preserve', {
+          onEvent: function(name, evt) {
+            if (name === 'htmx:beforeSwap') {
+              const target = evt.detail.target;
+              if (target.hasAttribute('hx-preserve')) {
+                // Save scroll position
+                target.dataset.scrollTop = target.scrollTop;
+              }
+            }
+            if (name === 'htmx:afterSwap') {
+              const target = evt.detail.target;
+              if (target.hasAttribute('hx-preserve') && target.dataset.scrollTop) {
+                // Restore scroll position
+                target.scrollTop = parseInt(target.dataset.scrollTop);
+              }
+            }
+          }
+        });
+        
+        // Initialize the extension
+        htmx.extendEvents(['htmx:beforeSwap', 'htmx:afterSwap']);
+      });
+    </script>
+</body>
+</html> 

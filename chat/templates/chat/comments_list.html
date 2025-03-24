@@ -1,0 +1,33 @@
+{% for comment in comments %}
+    <div class="comment d-flex mb-2">
+        <img src="{{ comment.author.avatar.url }}" alt="{{ comment.author.user.username }}" class="profile-avatar-sm me-2">
+        <div class="comment-content bg-white p-2 rounded flex-grow-1 shadow-sm">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <a href="{% url 'profile_detail' comment.author.user.username %}" class="fw-bold text-decoration-none">{{ comment.author.user.username }}</a>
+                    <p class="mb-0 text-dark">{{ comment.content }}</p>
+                </div>
+                <small class="text-muted ms-2">{{ comment.created_at|timesince }}</small>
+            </div>
+            
+            <!-- Comment reactions -->
+            <div class="comment-actions d-flex mt-2">
+                <button class="btn btn-sm btn-link p-0 me-2 comment-reaction-btn {% if comment.user_has_reacted %}active{% endif %}" 
+                        data-comment-id="{{ comment.id }}"
+                        hx-post="{% url 'add_comment_reaction' comment.id %}"
+                        hx-vals='{"reaction_type": "like"}'
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                        hx-swap="none">
+                    <i class="{% if comment.user_has_reacted %}fas{% else %}far{% endif %} fa-thumbs-up me-1"></i> Like
+                    <span class="reaction-count">{{ comment.reactions.count }}</span>
+                </button>
+                <button class="btn btn-sm btn-link p-0 comment-reply-btn" 
+                        data-comment-id="{{ comment.id }}">
+                    <i class="far fa-comment me-1"></i> Reply
+                </button>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <p class="text-muted small text-center my-2">No comments yet</p>
+{% endfor %} 

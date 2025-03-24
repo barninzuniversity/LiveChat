@@ -1,0 +1,445 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% if chat_room.is_group_chat %}
+            {{ chat_room.name }} | Social Chat
+        {% else %}
+            {% for participant in other_participants %}
+                Chat with {{ participant.user.username }} | Social Chat
+            {% endfor %}
+        {% endif %}
+    </title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Instagram font -->
+    <link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&display=swap" rel="stylesheet">
+    
+    <!-- Instagram Theme & Animation CSS -->
+    <link rel="stylesheet" href="{% static 'css/instagram-theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            background-color: var(--ig-light);
+            color: var(--ig-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body.dark {
+            background-color: var(--ig-dark-bg);
+            color: var(--ig-dark-text);
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 20px;
+            max-width: 75%;
+            position: relative;
+            word-wrap: break-word;
+            transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .sent {
+            background-color: var(--ig-primary);
+            color: white;
+            margin-left: auto;
+            margin-right: 10px;
+            border-bottom-right-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .received {
+            background-color: #efefef;
+            color: var(--ig-dark);
+            margin-left: 10px;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        body.dark .sent {
+            background-color: #1a6cc4;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        body.dark .received {
+            background-color: #2d2d2d;
+            color: #e9e9e9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .message-time {
+            font-size: 0.65rem;
+            opacity: 0.8;
+            margin-top: 4px;
+            display: block;
+            clear: both;
+        }
+        .sent .message-time {
+            color: rgba(255,255,255,0.7);
+            text-align: right;
+            margin-left: auto;
+            padding-right: 4px;
+        }
+        .received .message-time {
+            color: #65676b;
+            text-align: left;
+            padding-left: 4px;
+        }
+        .chat-header {
+            background-color: white;
+            border-bottom: 1px solid var(--ig-border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        body.dark .chat-header {
+            background-color: var(--ig-dark-card);
+            border-bottom: 1px solid var(--ig-dark-border);
+        }
+        .chat-container {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            background-color: white;
+            padding: 20px;
+        }
+        body.dark .chat-container {
+            background-color: var(--ig-dark-bg);
+        }
+        .chat-input {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            padding: 15px;
+            border-top: 1px solid var(--ig-border);
+        }
+        body.dark .chat-input {
+            background-color: var(--ig-dark-card);
+            border-top: 1px solid var(--ig-dark-border);
+        }
+        .chat-input .form-control {
+            border-radius: 20px;
+            padding: 10px 15px;
+            background-color: #f0f2f5;
+            border: none;
+        }
+        body.dark .chat-input .form-control {
+            background-color: var(--ig-dark-card);
+            border: 1px solid var(--ig-dark-border);
+            color: var(--ig-dark-text);
+        }
+        .chat-input .form-control:focus {
+            box-shadow: none;
+            background-color: #e4e6eb;
+        }
+        body.dark .chat-input .form-control:focus {
+            background-color: var(--ig-dark-bg);
+        }
+        .chat-input .btn-primary {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--ig-primary);
+            border: none;
+        }
+        .profile-avatar-sm {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 1px solid var(--ig-border);
+        }
+        body.dark .profile-avatar-sm {
+            border-color: var(--ig-dark-border);
+        }
+        /* Download button styling */
+        .download-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .file-download-button {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.06);
+            border-radius: 18px;
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+            color: var(--ig-primary);
+        }
+        .received .file-download-button {
+            background-color: rgba(0, 0, 0, 0.06);
+            color: var(--ig-primary);
+        }
+        body.dark .received .file-download-button {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sent .file-download-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .file-download-button:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .file-download-button i {
+            margin-right: 8px;
+        }
+        /* Message image styling */
+        .message-image img {
+            border-radius: 12px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+        .message-image img:hover {
+            transform: scale(1.03);
+        }
+        .new-messages-indicator {
+            position: fixed;
+            right: 20px;
+            bottom: 80px;
+            z-index: 10;
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body class="{% if request.session.dark_mode %}dark{% endif %}">
+    <div class="chat-header">
+        <div class="d-flex align-items-center">
+            {% if chat_room.is_group_chat %}
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-2" style="width: 40px; height: 40px;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h5 class="mb-0">{{ chat_room.name }}</h5>
+            {% else %}
+                {% for participant in other_participants %}
+                    {% if participant.avatar %}
+                        <img src="{{ participant.avatar.url }}" alt="{{ participant.user.username }}" class="profile-avatar-sm me-2">
+                    {% else %}
+                        <div class="story-circle" style="width: 40px; height: 40px;">
+                            <div class="d-flex align-items-center justify-content-center h-100 text-white bg-primary" style="border-radius: 50%;">
+                                {{ participant.user.username.0|upper }}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <h5 class="mb-0">{{ participant.user.username }}</h5>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div>
+            <a href="{% url 'chat_list' %}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
+    
+    <div class="chat-container" id="chat-messages">
+        {% include 'chat/messages.html' %}
+    </div>
+    
+    <div id="new-messages" class="new-messages-indicator">
+        New messages <i class="fas fa-angle-down ms-1"></i>
+    </div>
+    
+    <div class="chat-input">
+        <form id="chat-form" hx-post="{% url 'send_message' room_id=chat_room.id %}" hx-target="#chat-messages" hx-swap="innerHTML" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="d-flex align-items-center">
+                <label for="file-upload" class="btn btn-light rounded-circle me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <i class="fas fa-paperclip"></i>
+                </label>
+                <input type="file" id="file-upload" name="attachment" style="display: none;" accept="image/*,video/*,.pdf,.doc,.docx">
+                <input type="text" name="message" class="form-control me-2" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div id="file-preview" class="mt-2 d-none">
+                <div class="d-flex align-items-center">
+                    <div class="preview-content me-2"></div>
+                    <button type="button" class="btn btn-sm btn-danger remove-file">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    
+    <!-- Instagram theme JS -->
+    <script src="{% static 'js/components/animations.js' %}"></script>
+    <script src="{% static 'js/components/chat-room.js' %}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let autoScroll = true;
+            let userScrolled = false;
+            let currentMessageCount = 0;
+            let refreshTimer = null;
+            
+            const chatMessages = document.getElementById('chat-messages');
+            const newMessageIndicator = document.getElementById('new-messages');
+            
+            // Count initial messages
+            currentMessageCount = document.querySelectorAll('.chat-message').length;
+            
+            // Initial scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Focus on input field
+            document.querySelector('input[name="message"]').focus();
+            
+            // Detect user scrolling
+            chatMessages.addEventListener('scroll', function() {
+                // Check if scrolled up
+                const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
+                
+                if (!isScrolledToBottom) {
+                    userScrolled = true;
+                    autoScroll = false;
+                } else {
+                    userScrolled = false;
+                    autoScroll = true;
+                    newMessageIndicator.style.display = 'none';
+                }
+            });
+            
+            // Click new messages indicator to scroll down
+            newMessageIndicator.addEventListener('click', function() {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+                autoScroll = true;
+                userScrolled = false;
+                this.style.display = 'none';
+            });
+            
+            // Automatic refresh function
+            function refreshMessages() {
+                const scrollPos = chatMessages.scrollTop;
+                
+                fetch("{% url 'get_messages' room_id=chat_room.id %}")
+                    .then(response => response.text())
+                    .then(html => {
+                        // Create a temporary div to count messages
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        const newMessageCount = tempDiv.querySelectorAll('.chat-message').length;
+                        
+                        // Only update if there are new messages
+                        if (newMessageCount > currentMessageCount) {
+                            chatMessages.innerHTML = html;
+                            currentMessageCount = newMessageCount;
+                            
+                            // If not scrolled manually, scroll to bottom
+                            if (autoScroll) {
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            } else {
+                                // Restore scroll position and show indicator
+                                chatMessages.scrollTop = scrollPos;
+                                newMessageIndicator.style.display = 'block';
+                            }
+                        }
+                    })
+                    .finally(() => {
+                        // Schedule next refresh
+                        refreshTimer = setTimeout(refreshMessages, 3000);
+                    });
+            }
+            
+            // Start automatic refresh
+            refreshTimer = setTimeout(refreshMessages, 3000);
+            
+            // Form submission
+            document.getElementById('chat-form').addEventListener('submit', function() {
+                // This will be called after the message is sent and before HTMX swaps the content
+                document.getElementById('chat-form').addEventListener('htmx:afterSwap', function() {
+                    // After content is swapped by htmx, scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    autoScroll = true;
+                    userScrolled = false;
+                    
+                    // Update current message count
+                    currentMessageCount = document.querySelectorAll('.chat-message').length;
+                }, { once: true }); // Only trigger once
+            });
+            
+            // Cleanup when leaving the page
+            window.addEventListener('beforeunload', function() {
+                if (refreshTimer) {
+                    clearTimeout(refreshTimer);
+                }
+            });
+            
+            // File upload handling
+            const fileInput = document.getElementById('file-upload');
+            const filePreview = document.getElementById('file-preview');
+            const previewContent = filePreview.querySelector('.preview-content');
+            const removeFileBtn = filePreview.querySelector('.remove-file');
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    
+                    // Clear previous preview
+                    previewContent.innerHTML = '';
+                    
+                    // Show preview based on file type
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.style.maxHeight = '100px';
+                        img.style.borderRadius = '5px';
+                        img.src = URL.createObjectURL(file);
+                        previewContent.appendChild(img);
+                    } else if (file.type.startsWith('video/')) {
+                        const video = document.createElement('video');
+                        video.style.maxHeight = '100px';
+                        video.style.maxWidth = '200px';
+                        video.style.borderRadius = '5px';
+                        video.controls = true;
+                        video.src = URL.createObjectURL(file);
+                        previewContent.appendChild(video);
+                    } else {
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-file fa-2x';
+                        previewContent.appendChild(icon);
+                        
+                        const fileName = document.createElement('span');
+                        fileName.textContent = ' ' + file.name;
+                        fileName.style.marginLeft = '5px';
+                        previewContent.appendChild(fileName);
+                    }
+                    
+                    // Show preview container
+                    filePreview.classList.remove('d-none');
+                }
+            });
+            
+            // Remove file
+            removeFileBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                filePreview.classList.add('d-none');
+            });
+        });
+    </script>
+</body>
+</html> 
